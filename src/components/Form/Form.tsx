@@ -10,92 +10,76 @@ interface Props {
 
 export const Form: React.FC<Props> = ({ users, todos, addFunc }) => {
   const [title, setTitle] = useState('');
-
   const [userId, setUserId] = useState(0);
-
   const [titleError, setTitleError] = useState(false);
   const [userError, setUserError] = useState(false);
 
-  function onSubmitChacge(event: React.FormEvent) {
+  const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!title) {
-      setTitleError(true);
-    } else {
-      setTitleError(false);
-    }
+    // Validate inputs
+    const isTitleValid = !!title.trim();
+    const isUserValid = userId > 0;
 
-    if (!userId) {
-      setUserError(true);
-    } else {
-      setUserError(false);
-    }
+    setTitleError(!isTitleValid);
+    setUserError(!isUserValid);
 
-    if (title && userId) {
+    if (isTitleValid && isUserValid) {
+      // Generate new ID safely (handle empty todos array)
+      const newId =
+        todos.length > 0 ? Math.max(...todos.map(todo => todo.id)) + 1 : 1;
+
       addFunc({
-        id: Math.max(...todos.map(todo => todo.id)) + 1,
-        title: title,
+        id: newId,
+        title: title.trim(),
         completed: false,
-        userId: userId,
+        userId,
       });
 
+      // Reset form
       setTitle('');
       setUserId(0);
     }
-
-    return;
-  }
+  };
 
   return (
-    <form action="/api/todos" method="POST" onSubmit={onSubmitChacge}>
+    <form onSubmit={handleSubmit}>
       <div className="field">
         <label htmlFor="title">
-          Title: {''}
+          Title:
           <input
             name="title"
             value={title}
             type="text"
             data-cy="titleInput"
-            placeholder="Enter ad title"
+            placeholder="Enter todo title"
             onChange={event => setTitle(event.target.value)}
           />
-          {titleError && !title && (
-            <span className="error">Please enter a title</span>
-          )}
+          {titleError && <span className="error">Please enter a title</span>}
         </label>
       </div>
 
       <div className="field">
-        <label htmlFor="">
-          User: {''}
+        <label>
+          User:
           <select
             data-cy="userSelect"
             value={userId}
-            onChange={event => {
-              const selectedId = Number(event.target.value);
-              const selectedUser = users.find(user => user.id === selectedId);
-
-              if (selectedUser) {
-                setUserId(selectedUser.id);
-              }
-            }}
+            onChange={event => setUserId(Number(event.target.value))}
           >
             <option value="0" disabled>
               Choose a user
             </option>
-            {users.map(user => {
-              return (
-                <option key={user.id} value={user.id}>
-                  {user.name}
-                </option>
-              );
-            })}
+            {users.map(user => (
+              <option key={user.id} value={user.id}>
+                {user.name}
+              </option>
+            ))}
           </select>
         </label>
-        {userError && userId === 0 && (
-          <span className="error">Please choose a user</span>
-        )}
+        {userError && <span className="error">Please choose a user</span>}
       </div>
+
       <button type="submit" data-cy="submitButton">
         Add
       </button>
